@@ -1,6 +1,7 @@
 package store.domain;
 
 import java.util.List;
+import java.util.Optional;
 
 public class Promotions {
     private final List<Promotion> promotions;
@@ -9,7 +10,7 @@ public class Promotions {
         this.promotions = promotionList;
     }
 
-    public Promotion findByName(String productName) {
+    public Promotion promotionFindByName(String productName) {
         for (Promotion promotion : promotions) {
             if (promotion.promotionNameEqual(productName)) {
                 return  promotion;
