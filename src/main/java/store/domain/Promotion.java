@@ -28,4 +28,10 @@ public class Promotion {
         LocalDate today = DateTimes.now().toLocalDate();
         return (today.equals(startDate) || today.isAfter(startDate)) && (today.equals(endDate) || today.isBefore(endDate));
     }
+
+    public int calculateDiscountedQuantity(int promoQuantity) {
+        int appliablePromotionSets = promoQuantity / (buy + get); // 적용 가능한 프로모션 세트 수
+        int remainingQuantity = promoQuantity % (buy + get); // 남는 수량 (프로모션이 적용되지 않는 부분)
+        return (appliablePromotionSets * remainingQuantity) + Math.min(remainingQuantity, buy);
+    }
 }
