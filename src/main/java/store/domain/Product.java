@@ -21,13 +21,17 @@ public class Product {
         this.promotion = promotion;
     }
 
+    public String getPromotion() {
+        return promotion;
+    }
+
     public String formatProductInfo() {
         StringBuilder productInfo = new StringBuilder();
 
         productInfo.append(name).append(" ")
                 .append(priceFormat.format(price)).append(KOREA_WON)
                 .append(formatQuantity(quantity))
-                .append(promotion);
+                .append(formatPromotion(promotion));
         return productInfo.toString();
     }
 
@@ -39,11 +43,19 @@ public class Product {
         return stock;
     }
 
+    private String formatPromotion(String promotionName) {
+        if (promotionName == null) {
+            return " ";
+        }
+        return promotionName;
+    }
+
     public boolean productNameEqual(String productName) {
         return this.name.equals(productName);
     }
 
-
-
+    public boolean hasPromotion() {
+        return promotion != null;
+    }
 
 }
