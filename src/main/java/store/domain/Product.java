@@ -58,4 +58,7 @@ public class Product {
         return promotion != null;
     }
 
+    public int getMinStockAndQuntity(int stock) {
+        return Math.min(quantity,stock);
+    }
 }
