@@ -1,15 +1,27 @@
 package store.config;
 
 import store.controller.StoreController;
+import store.domain.Products;
+import store.domain.Promotions;
 import store.service.FileDataLoaderService;
 import store.service.StoreService;
+import store.service.UserInteractionCallback;
 import store.util.File.FileReader;
 import store.view.InputView;
 import store.view.OutputView;
 
 public class AppConfig {
     public StoreController storeController() {
-        return new StoreController(inputView(), outputView(), storeService());
+        StoreController controller = new StoreController(inputView(), outputView());
+        StoreService service = storeService(controller);
+        controller.setStoreService(service);
+        return controller;
+    }
+
+    private StoreService storeService(UserInteractionCallback callback) {
+        Products products = fileDataLoader().loadProductsFromFile();
+        Promotions promotions = fileDataLoader().loadPromotionsFromFile();
+        return new StoreService(products, promotions, callback);
     }
 
     private InputView inputView() {
@@ -20,8 +32,6 @@ public class AppConfig {
         return new OutputView();
     }
 
-    private StoreService storeService(){return fileDataLoader().initializeStoreService();}
-
     public FileDataLoaderService fileDataLoader() {
         return new FileDataLoaderService(fileReader());
     }
@@ -29,6 +39,5 @@ public class AppConfig {
     private FileReader fileReader() {
         return new FileReader();
     }
-
-
 }
+
