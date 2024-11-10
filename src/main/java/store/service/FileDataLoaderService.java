@@ -30,10 +30,4 @@ public class FileDataLoaderService {
         return new Promotions(promotionList);
     }
 
-    public StoreService initializeStoreService() {
-        Products products = loadProductsFromFile();
-        Promotions promotions = loadPromotionsFromFile();
-
-        return new StoreService(products, promotions);
-    }
 }
