@@ -1,14 +1,11 @@
 package store.controller;
 
-import store.domain.Products;
-import store.service.FileDataLoaderService;
+import store.domain.Receipt;
 import store.service.StoreService;
-import store.util.parser.InputParser;
-import store.util.validator.InputValidator;
+
 import store.view.InputView;
 import store.view.OutputView;
 
-import java.util.Map;
 
 public class StoreController {
     private InputView inputView;
@@ -24,6 +21,7 @@ public class StoreController {
     public void run() {
         storeOpeningMessage();
         customerPurchase();
+        membershipMessage();
     }
 
     private void storeOpeningMessage() {
@@ -33,6 +31,11 @@ public class StoreController {
 
     private void customerPurchase() {
         String answer = inputView.getPurchaseinfo();
-        storeService.processPayment(answer);
+        Receipt receipt = storeService.processPayment(answer);
+        outputView.printReceipt(receipt.generateReceiptString());
+    }
+
+
+    private void membershipMessage() {
     }
 }
