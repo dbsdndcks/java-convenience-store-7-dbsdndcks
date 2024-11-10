@@ -32,6 +32,11 @@ public class Promotion {
     public int calculateDiscountedQuantity(int promoQuantity) {
         int appliablePromotionSets = promoQuantity / (buy + get); // 적용 가능한 프로모션 세트 수
         int remainingQuantity = promoQuantity % (buy + get); // 남는 수량 (프로모션이 적용되지 않는 부분)
-        return (appliablePromotionSets * remainingQuantity) + Math.min(remainingQuantity, buy);
+        return (appliablePromotionSets * buy) + Math.min(remainingQuantity, buy); // 유료 수량 계산
+    }
+
+    public int getFreeQuantity(int promoQuantity) {
+        int appliablePromotionSets = promoQuantity / (buy + get);
+        return appliablePromotionSets * get;
     }
 }
