@@ -9,7 +9,7 @@ public class InputParser {
         Map<String, Integer> purchasedProducts = new HashMap<>();
         String[] items = input.replace("[", "").replace("]", "").split(",");
         for (String item : items) {
-            String[]parts = item.split(",");
+            String[]parts = item.split("-");
             String productName = parts[0];
             int quantity = Integer.parseInt(parts[1]);
             purchasedProducts.put(productName, quantity);
