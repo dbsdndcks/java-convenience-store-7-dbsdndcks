@@ -19,7 +19,6 @@ public class Promotion {
         this.endDate = endDate;
     }
 
-
     public boolean promotionNameEqual(String promotionName) {
         return (this.name.equals(promotionName));
     }
@@ -29,14 +28,24 @@ public class Promotion {
         return (today.equals(startDate) || today.isAfter(startDate)) && (today.equals(endDate) || today.isBefore(endDate));
     }
 
-    public int calculateDiscountedQuantity(int promoQuantity) {
-        int appliablePromotionSets = promoQuantity / (buy + get); // 적용 가능한 프로모션 세트 수
-        int remainingQuantity = promoQuantity % (buy + get); // 남는 수량 (프로모션이 적용되지 않는 부분)
-        return (appliablePromotionSets * buy) + Math.min(remainingQuantity, buy); // 유료 수량 계산
+    public boolean expectedFreeQuantityTrue(int purchaseQuantity) {
+        int result = purchaseQuantity - (buy + get);
+        if (purchaseQuantity == buy) {
+            return true;
+        }
+        return false;
     }
 
-    public int getFreeQuantity(int promoQuantity) {
+    public int currentFreeQuantity(int promoQuantity) {
         int appliablePromotionSets = promoQuantity / (buy + get);
         return appliablePromotionSets * get;
+    }
+
+    public boolean isEqualQuantityAndPromotion(int quantity) {
+        return buy == quantity;
+    }
+
+    public int hasNonPromotionalProduct(int promoQuantity) {
+        return promoQuantity -  (buy+get)*(promoQuantity/(buy + get));
     }
 }
