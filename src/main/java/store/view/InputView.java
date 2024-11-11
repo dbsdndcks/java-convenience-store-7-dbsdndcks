@@ -1,29 +1,26 @@
 package store.view;
 
 import camp.nextstep.edu.missionutils.Console;
+import store.util.Message.QuestionMessage;
 
 public class InputView {
     public String readItem() {
-        System.out.println("구매하실 상품명과 수량을 입력해 주세요. (예: [사이다-2],[감자칩-1])");
-        String input = Console.readLine();
-        return input;
+        System.out.println(QuestionMessage.READ_ITEM.getMessage());
+        return Console.readLine();
     }
 
-    public String InputMessage(String message) {
+    public String inputMessage(String message) {
         System.out.println(message);
-        String input = Console.readLine();
-        return input;
+        return Console.readLine();
     }
 
     public String membershipMessage() {
-        System.out.println("멤버십 할인을 받으시겠습니까? (Y/N)");
-        String input = Console.readLine();
-        return input;
+        System.out.println(QuestionMessage.MEMBERSHIP_PROMPT.getMessage());
+        return Console.readLine();
     }
 
     public String otherPurchaseMessage() {
-        System.out.println("감사합니다. 구매하고 싶은 다른 상품이 있나요? (Y/N)");
-        String input = Console.readLine();
-        return input;
+        System.out.println(QuestionMessage.OTHER_PURCHASE.getMessage());
+        return Console.readLine();
     }
 }
