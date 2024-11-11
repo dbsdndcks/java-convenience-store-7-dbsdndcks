@@ -21,6 +21,62 @@
 
 ## 🔻디렉토리 구조
 ```
+프로젝트 루트
+└── src
+    ├── main
+    │   ├── java
+    │   │   └── store
+    │   │       ├── config
+    │   │       │   └── AppConfig.java
+    │   │       ├── controller
+    │   │       │   ├── StoreController.java
+    │   │       │   └── UserInteractionCallback.java
+    │   │       ├── domain
+    │   │       │   ├── Product.java
+    │   │       │   ├── Products.java
+    │   │       │   ├── Promotion.java
+    │   │       │   ├── Promotions.java
+    │   │       │   ├── Receipt.java
+    │   │       │   └── ReceiptItem.java
+    │   │       ├── service
+    │   │       │   ├── FileDataLoaderService.java
+    │   │       │   └── StoreService.java
+    │   │       ├── util
+    │   │       │   ├── exception
+    │   │       │   │   └── RestartException.java
+    │   │       │   ├── file
+    │   │       │   │   └── FileReader.java
+    │   │       │   ├── message
+    │   │       │   │   ├── ErrorMessage.java
+    │   │       │   │   ├── QuestionMessage.java
+    │   │       │   │   └── ReciptMessage.java
+    │   │       │   ├── parser
+    │   │       │   │   ├── InputParser.java
+    │   │       │   │   ├── ProductParser.java
+    │   │       │   │   └── PromotionParser.java
+    │   │       │   └── validator
+    │   │       │       └── InputValidator.java
+    │   │       └── view
+    │   │           ├── InputView.java
+    │   │           └── OutputView.java
+    │   └── resources
+    │       ├── original_products.md
+    │       ├── products.md
+    │       └── promotions.md
+    └── test
+        └── java
+           └── store
+               ├── domain
+               │   ├── ProductsTest.java
+               │   ├── ProductTest.java
+               │   ├── PromotionsTest.java
+               │   ├── PromotionTest.java
+               │   └── ReceiptTest.java
+               ├── input
+               │   └── InputValidatorTest.java
+               └── integration
+                   ├── StoreIntegrationTest.java
+                   └── ApplicationTest.java
 
 ```
 
