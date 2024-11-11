@@ -1,6 +1,13 @@
 package store.service;
 
-import store.domain.*;
+import store.controller.UserInteractionCallback;
+import store.domain.Product;
+import store.domain.Products;
+import store.domain.Promotion;
+import store.domain.Promotions;
+import store.domain.Receipt;
+import store.domain.ReceiptItem;
+import store.util.exception.RestartException;
 import store.util.parser.InputParser;
 
 import java.util.List;
@@ -9,10 +16,12 @@ import java.util.Map;
 public class StoreService {
     private final Products products;
     private final Promotions promotions;
+    private final UserInteractionCallback userInteractionCallback;
 
-    public StoreService(Products products, Promotions promotions) {
+    public StoreService(Products products, Promotions promotions, UserInteractionCallback userInteractionCallback) {
         this.products = products;
         this.promotions = promotions;
+        this.userInteractionCallback = userInteractionCallback;
     }
 
     public String generateOpeningMessage() {
@@ -32,14 +41,20 @@ public class StoreService {
     private void handleProductPurchase(String productName, int quantity, Receipt receipt) {
         List<Product> productsList = products.findByName(productName);
         if (productsList.isEmpty()) throw new IllegalArgumentException("존재하지 않는 상품: " + productName);
-
+        validateTotalQuantity(quantity, productsList);
         int remainingQuantity = quantity;
         for (Product product : productsList) {
             if (remainingQuantity <= 0) break;
             remainingQuantity = processProductPurchase(product, remainingQuantity, receipt);
         }
-        if (remainingQuantity > 0) {
-            throw new IllegalArgumentException("Error: 상품 재고보다 많은 수량을 입력하셨습니다.");
+    }
+
+    public void validateTotalQuantity(int quantity, List<Product> productsList) {
+        int totalStock = productsList.stream()
+                .mapToInt(Product::getAvailableStock)
+                .sum();
+        if (totalStock < quantity) {
+            throw new IllegalArgumentException("[ERROR] 재고 수량을 초과하여 구매할 수 없습니다. 다시 입력해 주세요.");
         }
     }
 
@@ -51,16 +66,30 @@ public class StoreService {
     }
 
     private int applyPromotion(Product product, int quantity, Promotion promotion, Receipt receipt) {
+        if (!promotion.isValidOnDate()) {
+            return handleRegularProduct(product, quantity, receipt); // 프로모션이 유효하지 않으면 일반 구매로 처리
+        }
         int promoQuantity = product.getMinStockAndQuantity(quantity);
-        int discountedQuantity = promotion.calculateDiscountedQuantity(promoQuantity);
-        int freeQuantity = promotion.getFreeQuantity(promoQuantity);
+        int freeQuantity = promotion.currentFreeQuantity(promoQuantity);
+        int remainingNonPromotionalQuantity = promotion.hasNonPromotionalProduct(promoQuantity);
+        boolean addPromotion = promotion.expectedFreeQuantityTrue(promoQuantity);
 
-        System.out.println("프로모션 최대 수량: " + promoQuantity);
-        System.out.println("할인된 결제 수량: " + discountedQuantity);
-        System.out.println("무료 증정 수량: " + freeQuantity);
-
-        product.decrementStock(promoQuantity);
-
+        if (addPromotion) {
+            String message = product.getMorePromotionProductMessage(1);
+            boolean userAgrees = userInteractionCallback.askUser(message);
+            if (userAgrees) {
+                freeQuantity += 1;
+            }
+        }
+        if(!addPromotion && remainingNonPromotionalQuantity > 0) {
+            int totalNonPromotionalQuantity = (quantity - promoQuantity) + remainingNonPromotionalQuantity;
+            String message = product.getNonPromotionMessage(totalNonPromotionalQuantity);
+            boolean userAgrees = userInteractionCallback.askUser(message);
+            if (!userAgrees) {
+                throw new RestartException();
+            }
+        }
+        product.decrementStock(promoQuantity + freeQuantity);
 
         // 프로모션 항목을 하나의 ReceiptItem으로 추가
         ReceiptItem receiptItem = product.addReceiptItem(promoQuantity);
@@ -81,5 +110,13 @@ public class StoreService {
 
         // 남은 수량 반환
         return quantity - regularQuantity;
+    }
+
+    public void calculateMembership(Receipt receipt) {
+        receipt.membershipPayPrice();
+    }
+
+    public void calculateRegular(Receipt receipt) {
+        receipt.RegularPayPrice();
     }
 }
