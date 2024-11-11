@@ -2,15 +2,14 @@ package store.controller;
 
 import store.domain.Receipt;
 import store.service.StoreService;
-
 import store.util.exception.RestartException;
+import store.util.validator.InputValidator;
 import store.view.InputView;
 import store.view.OutputView;
 
-
 public class StoreController implements UserInteractionCallback {
-    private InputView inputView;
-    private OutputView outputView;
+    private final InputView inputView;
+    private final OutputView outputView;
     private StoreService storeService;
 
     public StoreController(InputView inputView, OutputView outputView) {
@@ -29,64 +28,96 @@ public class StoreController implements UserInteractionCallback {
                 customerPurchase();
                 otherPurchaseMessage();
             } catch (RestartException re) {
-                // 재시작 예외를 캐치하여 루프를 재실행
                 continue;
             }
-            // 재시작 예외가 발생하지 않는 경우 루프 종료
             return;
         }
     }
 
     private void storeOpeningMessage() {
-        String openiningMent = storeService.generateOpeningMessage();
-        outputView.printProducts(openiningMent);
+        String openingMessage = storeService.generateOpeningMessage();
+        outputView.printProducts(openingMessage);
     }
 
     private void customerPurchase() {
         while (true) {
             try {
-                String answer = inputView.readItem();
-                Receipt receipt = storeService.processPayment(answer);
-
-                updateStockAndSave(receipt);
-                membershipMessage(receipt);
-                outputView.printReceipt(receipt.generateReceiptString());
-                return;  // 성공적으로 실행되면 루프를 종료
+                handlePurchase();
+                return;
             } catch (IllegalArgumentException e) {
-                outputView.printError(e.getMessage());  // 예외 메시지 출력
+                outputView.printError(e.getMessage());
             }
         }
     }
-    private void updateStockAndSave(Receipt receipt) {
-        storeService.updateProductStock(receipt);  // 재고 업데이트
-        storeService.saveProductsToFile();  // 파일에 저장
+
+    private void handlePurchase() {
+        String answer = inputView.readItem();
+        InputValidator.validateInputProduct(answer);
+        Receipt receipt = purchaseProcess(answer);
+        outputView.printReceipt(receipt.generateReceiptString());
     }
 
+    private Receipt purchaseProcess(String answer) {
+        Receipt receipt = storeService.processPayment(answer);
+        updateStock(receipt);
+        handleMembership(receipt);
+        return receipt;
+    }
 
-    private void membershipMessage(Receipt receipt) {
+    private void updateStock(Receipt receipt) {
+        storeService.updateProductStock(receipt);
+        storeService.saveProductsToFile();
+    }
+
+    private void handleMembership(Receipt receipt) {
+        while (true) {
+            try {
+                processMembershipAnswer(receipt);
+                return;
+            } catch (IllegalArgumentException e) {
+                outputView.printError(e.getMessage());
+            }
+        }
+    }
+
+    private void processMembershipAnswer(Receipt receipt) {
         String answer = inputView.membershipMessage();
-        if (answer.equals("Y")) {
-            storeService.calculateMembership(receipt);
-        }
-        if (answer.equals("N")) {
-            storeService.calculateRegular(receipt);
-        }
+        InputValidator.validateInputQuestion(answer);
+        if (answer.equals("Y")) storeService.calculateMembership(receipt);
+        else storeService.calculateRegular(receipt);
     }
 
     private void otherPurchaseMessage() {
-        String answer = inputView.otherPurchaseMessage();
-        if (answer.equals("Y")) {
-            throw new RestartException();
-        }
-        if (answer.equals("N")) {
-
+        while (true) {
+            try {
+                if (handleOtherPurchase()) throw new RestartException();
+                return;
+            } catch (IllegalArgumentException e) {
+                outputView.printError(e.getMessage());
+            }
         }
     }
 
+    private boolean handleOtherPurchase() {
+        String answer = inputView.otherPurchaseMessage();
+        InputValidator.validateInputQuestion(answer);
+        return "Y".equals(answer);
+    }
 
     @Override
     public boolean askUser(String message) {
-        String answer = inputView.InputMessage(message);
+        while (true) {
+            try {
+                return processUserAnswer(message);
+            } catch (IllegalArgumentException e) {
+                outputView.printError(e.getMessage());
+            }
+        }
+    }
+
+    private boolean processUserAnswer(String message) {
+        String answer = inputView.inputMessage(message);
+        InputValidator.validateInputQuestion(answer);
         return "Y".equals(answer);
     }
 }
