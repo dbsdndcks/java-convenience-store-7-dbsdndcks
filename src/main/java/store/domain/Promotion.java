@@ -30,7 +30,7 @@ public class Promotion {
 
     public boolean expectedFreeQuantityTrue(int purchaseQuantity) {
         int result = purchaseQuantity - (buy + get);
-        if (purchaseQuantity == buy) {
+        if (result == buy) {
             return true;
         }
         return false;
@@ -40,7 +40,6 @@ public class Promotion {
         int appliablePromotionSets = promoQuantity / (buy + get);
         return appliablePromotionSets * get;
     }
-
 
     public int hasNonPromotionalProduct(int promoQuantity) {
         return promoQuantity -  (buy+get)*(promoQuantity/(buy + get));

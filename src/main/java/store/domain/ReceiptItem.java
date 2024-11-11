@@ -1,11 +1,13 @@
 package store.domain;
 
 public class ReceiptItem {
+    private static final String PURCHASE_FORMAT = "%-10s %8d %,10d";
+    private static final String FREE_ITEM_FORMAT = "%-10s %8d";
+
     private String name;
     private int price;
     private int quantity;
-    private int additonalQuantity = 0;
-
+    private int additionalQuantity = 0;
 
     public ReceiptItem(String name, int quantity, int price) {
         this.name = name;
@@ -13,23 +15,23 @@ public class ReceiptItem {
         this.price = price;
     }
 
-    public void addAdditionalQuantity(int addAdditonalQuantity) {
-        additonalQuantity += addAdditonalQuantity;
+    public void addAdditionalQuantity(int addAdditionalQuantity) {
+        additionalQuantity += addAdditionalQuantity;
     }
 
     public int getTotalPrice() {
         return price * quantity;
     }
 
-    // 구매 항목 문자열 생성 메서드
+    // Generates purchase item string
     public String toPurchaseString() {
-        return String.format("%-10s %8d %,10d", name, quantity, getTotalPrice());
+        return String.format(PURCHASE_FORMAT, name, quantity, getTotalPrice());
     }
 
-    // 증정 항목 문자열 생성 메서드
+    // Generates free item string
     public String toFreeItemString() {
-        if (additonalQuantity > 0) {
-            return String.format("%-10s %8d", name, additonalQuantity);
+        if (additionalQuantity > 0) {
+            return String.format(FREE_ITEM_FORMAT, name, additionalQuantity);
         }
         return "";
     }
@@ -39,15 +41,14 @@ public class ReceiptItem {
     }
 
     public int getTotalDiscountPrice() {
-        return price * additonalQuantity;
+        return price * additionalQuantity;
     }
 
     public boolean isPromotional() {
-        return additonalQuantity > 0;
+        return additionalQuantity > 0;
     }
 
     public String getName() {
         return name;
     }
 }
-

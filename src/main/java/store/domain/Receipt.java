@@ -1,11 +1,13 @@
 package store.domain;
 
+import store.util.ReciptMessage;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Receipt {
-    private final List<ReceiptItem> purchaseItems;  // 구매 상품 내역
-    private int totalAmount;                        // 총 구매액
+    private final List<ReceiptItem> purchaseItems;
+    private int totalAmount;
     private int membershipDiscountPrice;
     private int totalCustomerPrice;
 
@@ -16,77 +18,82 @@ public class Receipt {
         this.totalCustomerPrice = 0;
     }
 
-    // 구매 항목 추가 메서드 (무료 증정 수량 포함)
     public void addPurchaseItem(ReceiptItem item) {
         this.purchaseItems.add(item);
         this.totalAmount += item.getTotalPrice();
     }
 
-    // 영수증 정보를 문자열로 반환하는 메서드
     public String generateReceiptString() {
-        StringBuilder receiptString = new StringBuilder();
-        receiptString.append("==============W 편의점================\n");
-        receiptString.append(String.format("%-10s %6s %10s\n", "상품명", "수량", "금액"));
+        StringBuilder receiptBuilder = new StringBuilder();
+        receiptBuilder.append(ReciptMessage.RECEIPT_HEADER.getMessage())
+                .append(ReciptMessage.COLUMN_TITLES.getMessage())
+                .append(getPurchaseItemsString())
+                .append(ReciptMessage.FREE_ITEMS_HEADER.getMessage())
+                .append(getFreeItemsString())
+                .append(ReciptMessage.RECEIPT_FOOTER.getMessage())
+                .append(getTotalAmountString())
+                .append(getDiscountString(ReciptMessage.EVENT_DISCOUNT_LABEL.getMessage(), getTotalDiscountPrice()))
+                .append(getDiscountString(ReciptMessage.MEMBERSHIP_DISCOUNT_LABEL.getMessage(), membershipDiscountPrice))
+                .append(getFinalAmountString());
+        return receiptBuilder.toString();
+    }
 
-        // 구매 상품 목록 출력
+    private String getPurchaseItemsString() {
+        StringBuilder items = new StringBuilder();
         for (ReceiptItem item : purchaseItems) {
-            receiptString.append(item.toPurchaseString()).append("\n");
+            items.append(item.toPurchaseString()).append("\n");
         }
+        return items.toString();
+    }
 
-        // 무료 증정 상품 목록 출력
-        receiptString.append("=============증    정===============\n");
+    private String getFreeItemsString() {
+        StringBuilder freeItems = new StringBuilder();
         for (ReceiptItem item : purchaseItems) {
             String freeItem = item.toFreeItemString();
             if (!freeItem.isEmpty()) {
-                receiptString.append(freeItem).append("\n");
+                freeItems.append(freeItem).append("\n");
             }
         }
-
-        receiptString.append("====================================\n");
-        receiptString.append(String.format("%-10s %6d %15s\n", "총구매액", getTotalItemsCount(), String.format("%,d", totalAmount)));
-        receiptString.append(String.format("%-10s %22s\n", "행사할인", String.format("-%,d", getTotalDiscountPrice())));
-        receiptString.append(String.format("%-10s %21s\n", "멤버십할인", String.format("-%,d", membershipDiscountPrice)));
-        receiptString.append(String.format("%-10s %22s\n", "내실돈", String.format("%,d", totalCustomerPrice)));
-
-        return receiptString.toString();
+        return freeItems.toString();
     }
 
-    // 총 구매 항목 수량 계산
+    private String getTotalAmountString() {
+        return String.format(ReciptMessage.TOTAL_FORMAT.getMessage(),
+                ReciptMessage.TOTAL_PRICE.getMessage(), getTotalItemsCount(),
+                String.format(ReciptMessage.CURRENCY_FORMAT.getMessage(), totalAmount));
+    }
+
+    private String getDiscountString(String label, int discountAmount) {
+        return String.format(ReciptMessage.DISCOUNT_FORMAT.getMessage(), label,
+                String.format("-" + ReciptMessage.CURRENCY_FORMAT.getMessage(), discountAmount));
+    }
+
+    private String getFinalAmountString() {
+        return String.format(ReciptMessage.DISCOUNT_FORMAT.getMessage(), ReciptMessage.TOTAL_PAY_LABEL.getMessage(),
+                String.format(ReciptMessage.CURRENCY_FORMAT.getMessage(), totalCustomerPrice));
+    }
+
     private int getTotalItemsCount() {
-        int totalCount = 0;
-        for (ReceiptItem item : purchaseItems) {
-            totalCount += item.getQuantity();
-        }
-        return totalCount;
+        return purchaseItems.stream().mapToInt(ReceiptItem::getQuantity).sum();
     }
 
     private int getTotalDiscountPrice() {
-        int totalDiscountPrice = 0;
-        for (ReceiptItem item : purchaseItems) {
-            totalDiscountPrice += item.getTotalDiscountPrice();
-        }
-        return totalDiscountPrice;
+        return purchaseItems.stream().mapToInt(ReceiptItem::getTotalDiscountPrice).sum();
     }
 
-    // 프로모션 미적용 금액 계산
     private int calculateNonPromotionalAmount() {
-        int nonPromotionalAmount = 0;
-        for (ReceiptItem item : purchaseItems) {
-            if (!item.isPromotional()) {  // 프로모션 미적용 항목만 합산
-                nonPromotionalAmount += item.getTotalPrice();
-            }
-        }
-        return nonPromotionalAmount;
+        return purchaseItems.stream()
+                .filter(item -> !item.isPromotional())
+                .mapToInt(ReceiptItem::getTotalPrice)
+                .sum();
     }
 
-    // 멤버십 할인 계산 메서드
     private int calculateMembershipDiscount() {
         int nonPromotionalAmount = calculateNonPromotionalAmount();
-        membershipDiscountPrice = (int) (nonPromotionalAmount * 0.30);
-        if (membershipDiscountPrice > 8000) {
-            membershipDiscountPrice = 8000;
-        }
-        return membershipDiscountPrice;
+        double discountPercentage = Double.parseDouble(ReciptMessage.MEMBERSHIP_DISCOUNT_PERCENTAGE.getMessage());
+        membershipDiscountPrice = (int) (nonPromotionalAmount * discountPercentage);
+        int maxDiscount = Integer.parseInt(ReciptMessage.MAX_MEMBERSHIP_DISCOUNT.getMessage());
+        return Math.min(membershipDiscountPrice, maxDiscount);
     }
 
     public void membershipPayPrice() {
@@ -95,7 +102,7 @@ public class Receipt {
         totalCustomerPrice = totalAmount - (totalDiscountPrice + membershipDiscountPrice);
     }
 
-    public void RegularPayPrice() {
+    public void regularPayPrice() {
         int totalDiscountPrice = getTotalDiscountPrice();
         totalCustomerPrice = totalAmount - totalDiscountPrice;
     }

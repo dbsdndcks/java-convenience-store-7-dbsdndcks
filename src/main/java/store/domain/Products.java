@@ -10,29 +10,31 @@ public class Products {
 
     private final List<Product> products;
     private static final String PRODUCT_LIST_FILE = "products.md";
+    private static final String PRODUCT_LIST_COVER_FILE = "src/main/resources/products.md";
+    private static final String FILE_HEADER = "name,price,quantity,promotion\n";
+    private static final String WELCOME_MESSAGE = "안녕하세요. W편의점입니다.\n현재 보유하고 있는 상품입니다.\n\n";
+    private static final String PRODUCT_PREFIX = "- ";
 
     public Products(List<Product> products) {
-        this.products = products;
+        this.products = new ArrayList<>(products);
         addOutOfStockProducts();
     }
 
     private void addOutOfStockProducts() {
         List<String> productNamesWithStock = new ArrayList<>();
 
-        // 일반 상품이 존재하는 이름을 수집
         for (Product product : products) {
             if (product.hasStock() && !product.hasPromotion()) {
                 productNamesWithStock.add(product.getName());
             }
         }
 
-        // 프로모션 상품만 있고 일반 재고가 없는 경우에 "재고 없음" 상태로 추가
         List<Product> outOfStockProducts = new ArrayList<>();
         for (Product product : products) {
             if (product.hasPromotion() && !productNamesWithStock.contains(product.getName())) {
                 Product outOfStockProduct = product.createOutOfStockProduct();
                 outOfStockProducts.add(outOfStockProduct);
-                productNamesWithStock.add(product.getName());  // 중복 추가 방지
+                productNamesWithStock.add(product.getName());
             }
         }
         products.addAll(outOfStockProducts);
@@ -40,10 +42,9 @@ public class Products {
 
     public String generateProductListView() {
         StringBuilder viewBuilder = new StringBuilder();
-        viewBuilder.append("안녕하세요. W편의점입니다.\n현재 보유하고 있는 상품입니다.\n\n");
-
+        viewBuilder.append(WELCOME_MESSAGE);
         for (Product product : products) {
-            viewBuilder.append("- ").append(product.formatProductInfo()).append("\n");
+            viewBuilder.append(PRODUCT_PREFIX).append(product.formatProductInfo()).append("\n");
         }
         return viewBuilder.toString();
     }
@@ -58,19 +59,17 @@ public class Products {
         return requestProduct;
     }
 
-    // 상품 재고 업데이트 메서드
     public void updateProductStock(String productName, int quantity) {
         for (Product product : products) {
             if (product.productNameEqual(productName)) {
-                product.decrementStock(quantity);  // 재고 감소
+                product.decrementStock(quantity);
             }
         }
     }
 
-    // 변경된 상품 목록을 파일에 저장
     public void saveProductsToFile() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PRODUCT_LIST_FILE))) {
-            writer.write("name,price,quantity,promotion\n");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PRODUCT_LIST_COVER_FILE))) {
+            writer.write(FILE_HEADER);
             for (Product product : products) {
                 writer.write(product.toCsvFormat() + "\n");
             }

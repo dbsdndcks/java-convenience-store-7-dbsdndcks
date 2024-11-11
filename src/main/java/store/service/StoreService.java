@@ -1,12 +1,8 @@
 package store.service;
 
 import store.controller.UserInteractionCallback;
-import store.domain.Product;
-import store.domain.Products;
-import store.domain.Promotion;
-import store.domain.Promotions;
-import store.domain.Receipt;
-import store.domain.ReceiptItem;
+import store.domain.*;
+import store.util.Message.ErrorMessage;
 import store.util.exception.RestartException;
 import store.util.parser.InputParser;
 
@@ -31,17 +27,18 @@ public class StoreService {
     public Receipt processPayment(String input) {
         Receipt receipt = new Receipt();
         Map<String, Integer> parsedAnswer = InputParser.purchaseParse(input);
-
-        for (Map.Entry<String, Integer> answer : parsedAnswer.entrySet()) {
-            handleProductPurchase(answer.getKey(), answer.getValue(), receipt);
-        }
+        parsedAnswer.forEach((productName, quantity) -> handleProductPurchase(productName, quantity, receipt));
         return receipt;
     }
 
     private void handleProductPurchase(String productName, int quantity, Receipt receipt) {
         List<Product> productsList = products.findByName(productName);
-        if (productsList.isEmpty()) throw new IllegalArgumentException("존재하지 않는 상품: " + productName);
+        if (productsList.isEmpty()) throw new IllegalArgumentException(ErrorMessage.NON_EXISTENT_PRODUCT.getMessage());
         validateTotalQuantity(quantity, productsList);
+        processProductsList(productsList, quantity, receipt);
+    }
+
+    private void processProductsList(List<Product> productsList, int quantity, Receipt receipt) {
         int remainingQuantity = quantity;
         for (Product product : productsList) {
             if (remainingQuantity <= 0) break;
@@ -49,66 +46,77 @@ public class StoreService {
         }
     }
 
-    public void validateTotalQuantity(int quantity, List<Product> productsList) {
-        int totalStock = productsList.stream()
-                .mapToInt(Product::getAvailableStock)
-                .sum();
+    private void validateTotalQuantity(int quantity, List<Product> productsList) {
+        int totalStock = calculateTotalStock(productsList);
         if (totalStock < quantity) {
-            throw new IllegalArgumentException("[ERROR] 재고 수량을 초과하여 구매할 수 없습니다. 다시 입력해 주세요.");
+            throw new IllegalArgumentException(ErrorMessage.EXCEEDS_STOCK.getMessage());
         }
+    }
+
+    private int calculateTotalStock(List<Product> productsList) {
+        return productsList.stream().mapToInt(Product::getAvailableStock).sum();
     }
 
     private int processProductPurchase(Product product, int quantity, Receipt receipt) {
-        if (product.hasPromotion()) {
-            return applyPromotion(product, quantity, promotions.promotionFindByName(product.getPromotion()), receipt);
-        }
-        return handleRegularProduct(product, quantity, receipt);
+        return product.hasPromotion()
+                ? applyPromotion(product, quantity, promotions.promotionFindByName(product.getPromotion()), receipt)
+                : handleRegularProduct(product, quantity, receipt);
     }
 
     private int applyPromotion(Product product, int quantity, Promotion promotion, Receipt receipt) {
-        if (!promotion.isValidOnDate()) {
-            return handleRegularProduct(product, quantity, receipt); // 프로모션이 유효하지 않으면 일반 구매로 처리
-        }
+        if (!promotion.isValidOnDate()) return handleRegularProduct(product, quantity, receipt);
+        return processPromotion(product, quantity, promotion, receipt);
+    }
+
+    private int processPromotion(Product product, int quantity, Promotion promotion, Receipt receipt) {
         int promoQuantity = product.getMinStockAndQuantity(quantity);
+        int freeQuantity = calculateFreeQuantity(product, promotion, promoQuantity);
+        decrementProductStock(product, promoQuantity + freeQuantity);
+        addProductToReceipt(receipt, product, promoQuantity, freeQuantity);
+        return quantity - promoQuantity;
+    }
+
+    private int calculateFreeQuantity(Product product, Promotion promotion, int promoQuantity) {
         int freeQuantity = promotion.currentFreeQuantity(promoQuantity);
+        if (promotion.expectedFreeQuantityTrue(promoQuantity) && userAcceptsAdditionalItem(product)) {
+            freeQuantity += 1;
+        } else {
+            handleRemainingNonPromotionalQuantity(promoQuantity, product, promotion);
+        }
+        return freeQuantity;
+    }
+
+    private boolean userAcceptsAdditionalItem(Product product) {
+        String message = product.getMorePromotionProductMessage(1);
+        return userInteractionCallback.askUser(message);
+    }
+
+    private void handleRemainingNonPromotionalQuantity(int promoQuantity, Product product, Promotion promotion) {
         int remainingNonPromotionalQuantity = promotion.hasNonPromotionalProduct(promoQuantity);
-        boolean addPromotion = promotion.expectedFreeQuantityTrue(promoQuantity);
-
-        if (addPromotion) {
-            String message = product.getMorePromotionProductMessage(1);
-            boolean userAgrees = userInteractionCallback.askUser(message);
-            if (userAgrees) {
-                freeQuantity += 1;
-            }
+        if (remainingNonPromotionalQuantity > 0 && !userAcceptsNonPromotionalQuantity(product, remainingNonPromotionalQuantity)) {
+            throw new RestartException();
         }
-        if(!addPromotion && remainingNonPromotionalQuantity > 0) {
-            int totalNonPromotionalQuantity = (quantity - promoQuantity) + remainingNonPromotionalQuantity;
-            String message = product.getNonPromotionMessage(totalNonPromotionalQuantity);
-            boolean userAgrees = userInteractionCallback.askUser(message);
-            if (!userAgrees) {
-                throw new RestartException();
-            }
-        }
-        product.decrementStock(promoQuantity + freeQuantity);
+    }
 
-        // 프로모션 항목을 하나의 ReceiptItem으로 추가
+    private boolean userAcceptsNonPromotionalQuantity(Product product, int remainingNonPromotionalQuantity) {
+        String message = product.getNonPromotionMessage(remainingNonPromotionalQuantity);
+        return userInteractionCallback.askUser(message);
+    }
+
+    private void decrementProductStock(Product product, int totalQuantity) {
+        product.decrementStock(totalQuantity);
+    }
+
+    private void addProductToReceipt(Receipt receipt, Product product, int promoQuantity, int freeQuantity) {
         ReceiptItem receiptItem = product.addReceiptItem(promoQuantity);
         receiptItem.addAdditionalQuantity(freeQuantity);
         receipt.addPurchaseItem(receiptItem);
-
-        // 남은 수량 반환
-        return quantity - promoQuantity;
     }
 
     private int handleRegularProduct(Product product, int quantity, Receipt receipt) {
         int regularQuantity = product.getMinStockAndQuantity(quantity);
-        product.decrementStock(regularQuantity);
-
-        // 일반 구매 항목을 하나의 ReceiptItem으로 추가
-        ReceiptItem purchaseItem = product.addReceiptItem(regularQuantity);
-        receipt.addPurchaseItem(purchaseItem);
-
-        // 남은 수량 반환
+        decrementProductStock(product, regularQuantity);
+        addProductToReceipt(receipt, product, regularQuantity, 0);
         return quantity - regularQuantity;
     }
 
@@ -117,17 +125,14 @@ public class StoreService {
     }
 
     public void calculateRegular(Receipt receipt) {
-        receipt.RegularPayPrice();
+        receipt.regularPayPrice();
     }
 
     public void updateProductStock(Receipt receipt) {
-        for (ReceiptItem item : receipt.getPurchaseItems()) {
-            products.updateProductStock(item.getName(), item.getQuantity());
-        }
+        receipt.getPurchaseItems().forEach(item -> products.updateProductStock(item.getName(), item.getQuantity()));
     }
 
     public void saveProductsToFile() {
         products.saveProductsToFile();
     }
-
 }
