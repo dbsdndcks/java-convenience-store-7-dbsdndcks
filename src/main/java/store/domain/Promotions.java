@@ -1,7 +1,6 @@
 package store.domain;
 
 import java.util.List;
-import java.util.Optional;
 
 public class Promotions {
     private final List<Promotion> promotions;

@@ -8,6 +8,7 @@ import store.util.File.FileReader;
 import store.util.parser.ProductParser;
 import store.util.parser.PromotionParser;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FileDataLoaderService {
@@ -21,7 +22,7 @@ public class FileDataLoaderService {
     }
 
     public Products loadProductsFromFile() {
-        List<Product> productList = fileReader.readFile(PRODUCT_LIST_FILE, ProductParser::parse);
+        List<Product> productList = new ArrayList<>(fileReader.readFile(PRODUCT_LIST_FILE, ProductParser::parse));
         return new Products(productList);
     }
 

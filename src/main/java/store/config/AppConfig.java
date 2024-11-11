@@ -5,7 +5,7 @@ import store.domain.Products;
 import store.domain.Promotions;
 import store.service.FileDataLoaderService;
 import store.service.StoreService;
-import store.service.UserInteractionCallback;
+import store.controller.UserInteractionCallback;
 import store.util.File.FileReader;
 import store.view.InputView;
 import store.view.OutputView;
