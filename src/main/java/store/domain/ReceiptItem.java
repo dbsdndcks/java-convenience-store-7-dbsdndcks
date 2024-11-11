@@ -23,19 +23,27 @@ public class ReceiptItem {
 
     // 구매 항목 문자열 생성 메서드
     public String toPurchaseString() {
-        return String.format("%-10s\t%d\t%,d원", name, quantity, getTotalPrice());
+        return String.format("%-10s %8d %,10d", name, quantity, getTotalPrice());
     }
 
     // 증정 항목 문자열 생성 메서드
     public String toFreeItemString() {
         if (additonalQuantity > 0) {
-            return String.format("%-10s\t%d", name, additonalQuantity);
+            return String.format("%-10s %8d", name, additonalQuantity);
         }
         return "";
     }
 
     public int getQuantity() {
         return quantity;
+    }
+
+    public int getTotalDiscountPrice() {
+        return price * additonalQuantity;
+    }
+
+    public boolean isPromotional() {
+        return additonalQuantity > 0;
     }
 }
 
