@@ -13,7 +13,6 @@ public class ProductParser {
         if (data[3].equals("null")) {
             promotion = null;
         }
-
         return new Product(name, price, quantity, promotion);
     }
 }
