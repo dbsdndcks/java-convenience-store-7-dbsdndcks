@@ -119,4 +119,15 @@ public class StoreService {
     public void calculateRegular(Receipt receipt) {
         receipt.RegularPayPrice();
     }
+
+    public void updateProductStock(Receipt receipt) {
+        for (ReceiptItem item : receipt.getPurchaseItems()) {
+            products.updateProductStock(item.getName(), item.getQuantity());
+        }
+    }
+
+    public void saveProductsToFile() {
+        products.saveProductsToFile();
+    }
+
 }

@@ -41,9 +41,6 @@ public class Promotion {
         return appliablePromotionSets * get;
     }
 
-    public boolean isEqualQuantityAndPromotion(int quantity) {
-        return buy == quantity;
-    }
 
     public int hasNonPromotionalProduct(int promoQuantity) {
         return promoQuantity -  (buy+get)*(promoQuantity/(buy + get));

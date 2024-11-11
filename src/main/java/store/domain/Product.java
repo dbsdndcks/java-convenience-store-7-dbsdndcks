@@ -50,7 +50,7 @@ public class Product {
 
     private String formatQuantity(int quantity) {
         String stock = quantity + STOCK_COUNT;
-        if (quantity == 0) {
+        if (quantity <= 0) {
             return OUT_OF_STOCK;
         }
         return stock;
@@ -78,7 +78,7 @@ public class Product {
     }
 
     public void decrementStock(int promoQuantity) {
-        remainingQuantity -= promoQuantity;
+        quantity -= promoQuantity;
     }
 
     public ReceiptItem addReceiptItem(int promoQuantity) {
@@ -101,5 +101,15 @@ public class Product {
 
     public String getName() {
         return name;
+    }
+    public String toCsvFormat() {
+        return String.format("%s,%d,%d,%s", name, price, quantity, formatPromotionToString(promotion));
+    }
+
+    private Object formatPromotionToString(String promotion) {
+        if (promotion != null) {
+            return promotion;
+        }
+        return "null";
     }
 }

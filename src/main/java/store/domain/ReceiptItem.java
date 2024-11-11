@@ -45,5 +45,9 @@ public class ReceiptItem {
     public boolean isPromotional() {
         return additonalQuantity > 0;
     }
+
+    public String getName() {
+        return name;
+    }
 }
 

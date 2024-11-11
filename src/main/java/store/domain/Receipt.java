@@ -99,4 +99,8 @@ public class Receipt {
         int totalDiscountPrice = getTotalDiscountPrice();
         totalCustomerPrice = totalAmount - totalDiscountPrice;
     }
+
+    public List<ReceiptItem> getPurchaseItems() {
+        return purchaseItems;
+    }
 }

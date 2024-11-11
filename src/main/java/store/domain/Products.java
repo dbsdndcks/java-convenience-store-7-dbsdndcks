@@ -1,11 +1,15 @@
 package store.domain;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Products {
 
     private final List<Product> products;
+    private static final String PRODUCT_LIST_FILE = "products.md";
 
     public Products(List<Product> products) {
         this.products = products;
@@ -52,6 +56,27 @@ public class Products {
             }
         }
         return requestProduct;
+    }
+
+    // 상품 재고 업데이트 메서드
+    public void updateProductStock(String productName, int quantity) {
+        for (Product product : products) {
+            if (product.productNameEqual(productName)) {
+                product.decrementStock(quantity);  // 재고 감소
+            }
+        }
+    }
+
+    // 변경된 상품 목록을 파일에 저장
+    public void saveProductsToFile() {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(PRODUCT_LIST_FILE))) {
+            writer.write("name,price,quantity,promotion\n");
+            for (Product product : products) {
+                writer.write(product.toCsvFormat() + "\n");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
     }
 
 }

@@ -33,9 +33,8 @@ public class StoreController implements UserInteractionCallback {
                 continue;
             }
             // 재시작 예외가 발생하지 않는 경우 루프 종료
-            break;
+            return;
         }
-        System.out.println("프로그램이 종료되었습니다.");
     }
 
     private void storeOpeningMessage() {
@@ -48,13 +47,19 @@ public class StoreController implements UserInteractionCallback {
             try {
                 String answer = inputView.readItem();
                 Receipt receipt = storeService.processPayment(answer);
+
+                updateStockAndSave(receipt);
                 membershipMessage(receipt);
                 outputView.printReceipt(receipt.generateReceiptString());
-                break;  // 성공적으로 실행되면 루프를 종료
+                return;  // 성공적으로 실행되면 루프를 종료
             } catch (IllegalArgumentException e) {
                 outputView.printError(e.getMessage());  // 예외 메시지 출력
             }
         }
+    }
+    private void updateStockAndSave(Receipt receipt) {
+        storeService.updateProductStock(receipt);  // 재고 업데이트
+        storeService.saveProductsToFile();  // 파일에 저장
     }
 
 
