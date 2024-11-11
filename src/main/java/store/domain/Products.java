@@ -9,6 +9,29 @@ public class Products {
 
     public Products(List<Product> products) {
         this.products = products;
+        addOutOfStockProducts();
+    }
+
+    private void addOutOfStockProducts() {
+        List<String> productNamesWithStock = new ArrayList<>();
+
+        // 일반 상품이 존재하는 이름을 수집
+        for (Product product : products) {
+            if (product.hasStock() && !product.hasPromotion()) {
+                productNamesWithStock.add(product.getName());
+            }
+        }
+
+        // 프로모션 상품만 있고 일반 재고가 없는 경우에 "재고 없음" 상태로 추가
+        List<Product> outOfStockProducts = new ArrayList<>();
+        for (Product product : products) {
+            if (product.hasPromotion() && !productNamesWithStock.contains(product.getName())) {
+                Product outOfStockProduct = product.createOutOfStockProduct();
+                outOfStockProducts.add(outOfStockProduct);
+                productNamesWithStock.add(product.getName());  // 중복 추가 방지
+            }
+        }
+        products.addAll(outOfStockProducts);
     }
 
     public String generateProductListView() {
@@ -30,4 +53,5 @@ public class Products {
         }
         return requestProduct;
     }
+
 }
