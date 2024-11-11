@@ -1,8 +1,13 @@
 package store;
 
 import camp.nextstep.edu.missionutils.test.NsTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 
 import static camp.nextstep.edu.missionutils.test.Assertions.assertNowTest;
@@ -10,6 +15,15 @@ import static camp.nextstep.edu.missionutils.test.Assertions.assertSimpleTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ApplicationTest extends NsTest {
+    private static final Path ORIGINAL_PRODUCTS_PATH = Path.of("src/main/resources/original_products.md");
+    private static final Path PRODUCTS_PATH = Path.of("src/main/resources/products.md");
+
+    @BeforeEach
+    void resetProductsFile() throws IOException {
+        Files.copy(ORIGINAL_PRODUCTS_PATH, PRODUCTS_PATH, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+
     @Test
     void 파일에_있는_상품_목록_출력() {
         assertSimpleTest(() -> {
